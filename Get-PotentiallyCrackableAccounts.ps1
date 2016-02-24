@@ -1,7 +1,7 @@
 ﻿<#
     Author: Matan Hart
-    Contact: matan.hart@cyberark.com
-    License: ???
+    Contact: cyberark.labs@cyberark.com
+    License: GNU v3
     Requirements: PowerShell v3+
 #>
 
