@@ -127,7 +127,7 @@ function Get-TGSCipher
                 Write-Verbose "Converting to hashcat format"
                 foreach ($Target in $TargetList) {
                     if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
-                        $Account = $Object.Target -split "@"
+                        $Account = $Target.Target -split "@"
                         $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Object.SPN)*`$" + $Object.EncTicketPart.Substring(0,32) + "`$" + $Object.EncTicketPart.Substring(32)
                     }
                     else {
@@ -140,7 +140,7 @@ function Get-TGSCipher
                 Write-Verbose "Converting to JtR format"
                 foreach ($Target in $TargetList) {
                     if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
-                        $Account = $Object.Target -split "@"
+                        $Account = $Target.Target -split "@"
                         $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Object.SPN)*`$" + $Object.EncTicketPart.Substring(0,32) + "`$" + $Object.EncTicketPart.Substring(32)  
                     }
                     else {
