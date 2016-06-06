@@ -116,7 +116,7 @@ function Get-TGSCipher
         }
     }
     End {
-        if (!$CrackList.EncTicketPart) {
+        if (!$TargetList.EncTicketPart) {
             Write-Host "Could not retrieve any tickets!"
         }
         if ($ConvertTo)
@@ -151,11 +151,11 @@ function Get-TGSCipher
             elseif ($ConvertTo -eq "Kerberoast")
             {
                 Write-Verbose "Converting to Kerberoast format"
-                [string]$Output = $CrackList.EncTicketPart -join "\n"
+                [string]$Output = $TargetList.EncTicketPart -join "\n"
             }
         }
         else {
-            return $CrackList
+            return $TargetList
         }
         return $Output 
     } 
