@@ -203,6 +203,7 @@ function Find-PotentiallyCrackableAccounts
         
         #----------------------------------- Time stuff -----------------------------------
         
+        $CrackWindow = "N/A"
         #if the user's password has expiration date (works with FGPP) - https://msdn.microsoft.com/en-us/library/cc223410.aspx
         if ($user.Properties.'msds-userpasswordexpirytimecomputed' -ne 9223372036854775807) # 0x7FFFFFFFFFFFFFFF
         {
@@ -216,14 +217,18 @@ function Find-PotentiallyCrackableAccounts
 
         #----------------------------------- UAC stuff -----------------------------------
         
-        [int32]$UAC = [string]$User.Properties.useraccountcontrol
         #reading UAC attributes using bitmask - https://support.microsoft.com/en-us/kb/305144
+        [int32]$UAC = [string]$User.Properties.useraccountcontrol
         $IsEnabled = $true
         #if the user is disabled or lockedout
         if (($UAC -band 2) -eq 2 -or ($UAC -band 16) -eq 16) {$IsEnabled = $false} # 0x0002 / 0x0010
         $IsPasswordExpires = $true
         #if the user password never expires
-        if (($UAC -band 65536) -eq 65536) {$IsPasswordExpires = $false} # 0x10000
+        if (($UAC -band 65536) -eq 65536) # 0x10000
+        {
+            $IsPasswordExpires = $false
+            $CrackWindow = "Indefinitely"
+        } 
         $Delegation = $false
         $TargetServices = "None"
         #if the user is trusted for Kerberos unconstrained delegation
@@ -353,10 +358,11 @@ function Find-PotentiallyCrackableAccounts
     if ($Sensitive)
     {
        Write-Verbose "Removing non-sensitive users from the list"
-       $AllData = $AllData | Where-Object {$_.IsSensitive}
+       $AllData = $AllData | ? {$_.IsSensitive}
+
     }  
     Write-Verbose "Number of users included in the list: $($AllData.UserName.Count)"
     if ($GetSPNs) {return @($AllData.AssociatedSPNs)}
     elseif ($FullData) {return $AllData}
-    else {return $AllData | Select-Object UserName,DomainName,IsSensitive,EncType,Description,PwdAge,CrackWindow,RunsUnder}        
+    else {return $AllData | ? {$_.IsEnabled} | Select-Object UserName,DomainName,IsSensitive,EncType,Description,PwdAge,CrackWindow,RunsUnder}        
 }
