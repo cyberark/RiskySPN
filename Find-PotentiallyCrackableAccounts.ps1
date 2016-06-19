@@ -94,41 +94,36 @@ function Find-PotentiallyCrackableAccounts
     $SearchList = @()
     if($Domain)
     {
-        if ($Domain -eq "Current")
-        {
+        if ($Domain -eq "Current") {
             $SearchScope = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
         }
         else
         {
-            try
-            {
+            try {
                 $TargetDomain = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
                 $SearchScope = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($TargetDomain)
             }
-            catch 
-            {
+            catch {
                 Write-Error "Could not communicate with the foreigen domain: $Domain"
                 return
             } 
         }
-        if ($SearchScope.DomainMode.value__ -lt 4)
-        {
+        if ($SearchScope.DomainMode.value__ -lt 4 -or $ChildDomain.DomainMode.value__ -ne -1) {
             Write-Warning "The function level of domain: $($SearchScope.Name) is lower than 2008 - Some stuff may not work"
         }
         $SearchList += 'LDAP://DC=' + ($SearchScope.Name -Replace ("\.",',DC='))
-        Write-Host "Searching the domain: $($SearchScope.name)"
+        Write-Verbose "Searching the domain: $($SearchScope.name)"
     }
     else 
     {
         $SearchScope = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
         foreach ($ChildDomain in $($SearchScope.Domains)) {
-            if ($ChildDomain.DomainMode.value__ -lt 4)
-            {
+            if ($ChildDomain.DomainMode.value__ -lt 4 -or $ChildDomain.DomainMode.value__ -ne -1) {
                 Write-Warning "The function level of domain: $($ChildDomain.Name) is lower than 2008 - Some stuff may not work"
             }
             $SearchList += 'LDAP://DC=' + ($ChildDomain.Name -Replace ("\.",',DC='))
         }
-        Write-Host "Searching the forest: $($SearchScope.name)"    
+        Write-Verbose "Searching the forest: $($SearchScope.name)"    
     }
 
     #creating ADSI searcher 
@@ -140,13 +135,12 @@ function Find-PotentiallyCrackableAccounts
 
     #list of built-in sensitive groups (Administratos group conatins domain and enterprise admins) - did I missed a group?
     $SensitiveGroups = @("Administrators", "Account Operators", "Backup Operators", "Print Operators", "Server Operators", "Group Policy Creator Owners", "Schema Admins")
-    if ($AddGroups)
-    {
+    if ($AddGroups) {
         Write-Verbose "Adding $AddGroups to the list of senstivie groups"
         $SensitiveGroups += $AddGroups
     }
     $AllSensitiveGroups = @()
-    Write-Host "Gathering sensitive groups"
+    Write-Verbose "Gathering sensitive groups"
     foreach ($Path in $SearchList) {
         Write-Verbose "Searching Sensitive groups in domain: $($Path -replace "LDAP://DC=" -replace ",DC=", ".")"
         $Searcher.SearchRoot = $Path
@@ -159,7 +153,6 @@ function Find-PotentiallyCrackableAccounts
             catch {
                 Write-Warning "Could not communicate with the domain: $($Path -replace "LDAP://DC=" -replace ",DC=", ".")"
             }
-
             if ($GroupObjects)
             {
                 foreach ($GroupObject in $GroupObjects) {
@@ -174,7 +167,7 @@ function Find-PotentiallyCrackableAccounts
 
 #========================================================================= Gathering users with SPN =========================================================================
   
-    Write-Host "Gathering user accounts associated with SPN"
+    Write-Verbose "Gathering user accounts associated with SPN"
     #list of properties to retreive from AD
     $Properies = "msDS-UserPasswordExpiryTimeComputed", "msDS-AllowedToDelegateTo", "msDS-SupportedEncryptionTypes", "samaccountname", "userprincipalname", "useraccountcontrol", "displayname", "memberof", "serviceprincipalname", "pwdlastset", "description"
     foreach ($Property in $Properies) {
@@ -333,7 +326,7 @@ function Find-PotentiallyCrackableAccounts
         if ($UserSensitiveGroups -or $Delegation)
         {
             Write-Verbose "$($User.Properties.displayname) is sensitive"
-            $IsSensitive = $true
+            $IsSensitive = $true 
         }
         $UserData = New-Object psobject -Property @{
             UserName        = [string]$User.Properties.samaccountname
@@ -359,7 +352,6 @@ function Find-PotentiallyCrackableAccounts
     {
        Write-Verbose "Removing non-sensitive users from the list"
        $AllData = $AllData | ? {$_.IsSensitive}
-
     }  
     Write-Verbose "Number of users included in the list: $($AllData.UserName.Count)"
     if ($GetSPNs) {return @($AllData.AssociatedSPNs)}
