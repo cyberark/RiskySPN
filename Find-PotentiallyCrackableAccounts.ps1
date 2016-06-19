@@ -108,7 +108,7 @@ function Find-PotentiallyCrackableAccounts
                 return
             } 
         }
-        if ($SearchScope.DomainMode.value__ -lt 4 -or $ChildDomain.DomainMode.value__ -ne -1) {
+        if ($SearchScope.DomainMode.value__ -lt 4 -or $ChildDomain.DomainMode.value__ -eq -1) {
             Write-Warning "The function level of domain: $($SearchScope.Name) is lower than 2008 - Some stuff may not work"
         }
         $SearchList += 'LDAP://DC=' + ($SearchScope.Name -Replace ("\.",',DC='))
@@ -118,7 +118,7 @@ function Find-PotentiallyCrackableAccounts
     {
         $SearchScope = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
         foreach ($ChildDomain in $($SearchScope.Domains)) {
-            if ($ChildDomain.DomainMode.value__ -lt 4 -or $ChildDomain.DomainMode.value__ -ne -1) {
+            if ($ChildDomain.DomainMode.value__ -lt 4 -or $ChildDomain.DomainMode.value__ -eq -1) {
                 Write-Warning "The function level of domain: $($ChildDomain.Name) is lower than 2008 - Some stuff may not work"
             }
             $SearchList += 'LDAP://DC=' + ($ChildDomain.Name -Replace ("\.",',DC='))
