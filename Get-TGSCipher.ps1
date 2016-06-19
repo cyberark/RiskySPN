@@ -103,7 +103,7 @@ function Get-TGSCipher
             }
             try {
                 #extracting the EncPart portion of the TGS
-                [System.Collections.ArrayList]$Parts = ($HexStream -replace ".*048204..").Split("A48201")
+                [System.Collections.ArrayList]$Parts = ($HexStream -replace ".*048204..") -Split "A48201"
                 if ($Parts.Count -gt 2) {
                     $Parts.RemoveAt($Parts.Count - 1)
                     $EncPart = $Parts -join "A48201"
@@ -150,7 +150,7 @@ function Get-TGSCipher
         else {
             $Output = $TargetList
         }
-        Write-Verbose "returing $($Output.Count) tickets"
+        Write-Verbose "returning $($Output.Count) tickets"
         return $Output 
     } 
 }
