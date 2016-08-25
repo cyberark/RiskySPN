@@ -29,7 +29,7 @@ function Get-TGSCipher
         Do not query Acitve Directory (LDAP) to determine the user prinicipal name (UPN) which runs under the SPN.
 
     .PARAMETER Format
-        Convert the output to a diffrenet format. Options are Hashcat, John (John the Ripper) and Kerberoast.
+        Convert the output to a password cracking format. Options are Hashcat, John (John the Ripper) and Kerberoast.
 
     .EXAMPLE 
         Get-TGSCipher -SPN "MSSQLSvc/SQLServer.lab.com:1433"
@@ -103,7 +103,7 @@ function Get-TGSCipher
             }
             try {
                 #extracting the EncPart portion of the TGS
-                [System.Collections.ArrayList]$Parts = ($HexStream -replace ".*048204..") -Split "A48201"
+                [System.Collections.ArrayList]$Parts = ($HexStream -replace '^(.*?)04820...(.*)','$2') -Split "A48201"
                 if ($Parts.Count -gt 2) {
                     $Parts.RemoveAt($Parts.Count - 1)
                     $EncPart = $Parts -join "A48201"
