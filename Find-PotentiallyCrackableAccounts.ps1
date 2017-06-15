@@ -243,13 +243,13 @@ function Find-PotentiallyCrackableAccounts
         #if the user supports AES encryptions (MS-KILE 2.2.6) - https://msdn.microsoft.com/en-us/library/cc220375.aspx
         if ($eType)
         {
-            if ($eType -band 16 -eq 16) {$EncType = "AES256-HMAC"} # 0x10
-            elseif ($eType -band 8 -eq 8) {$EncType = "AES128-HMAC"} # 0x08
+            if (($eType -band 16) -eq 16) {$EncType = "AES256-HMAC"} # 0x10
+            elseif (($eType -band 8) -eq 8) {$EncType = "AES128-HMAC"} # 0x08
         }
         else 
         {
             #if the UF_USE_DES_KEY_ONLY bit is set (account can only use DES in Kerberos authentication)
-            if ($UAC -band 2097152 -eq 2097152) {$EncType = "DES"} #0x200000
+            if (($UAC -band 2097152) -eq 2097152) {$EncType = "DES"} #0x200000
         }
 
         #----------------------------------- SPN stuff -----------------------------------
